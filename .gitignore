@@ -1,0 +1,21 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$*.py
+*.egg-info/
+.eggs/
+
+# IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# OS temporary files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store

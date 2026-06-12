@@ -1,0 +1,50 @@
+name: Run Experiments
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-experiments:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run experiments
+      env:
+        PYTHONPATH: .
+      run: |
+        python src/scripts/run_experiments.py
+
+    - name: Upload Experiment Report and Plots as Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: experiment-results
+        path: |
+          实验结果报告.md
+          src/results/
+
+    - name: Commit and push generated report and plots
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "Auto-update experiment results and report [skip ci]"
+        file_pattern: '实验结果报告.md src/results/*'
