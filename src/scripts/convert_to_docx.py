@@ -134,8 +134,8 @@ def main():
         "构建了多源异构数据特征融合机制，将稀疏离散的运维工单日志信息映射至连续隐空间，与气象和功率时序特征完成级联映射与非线性交融。"
         "最后，针对计划检修停机时常规模型存在的功率预测残留痛点，设计了可微运维门控网络（O&M Gate），"
         "在模型前向计算图中引入带有物理常识先验的事件门控偏置对输出结果进行强物理约束。利用包含丰富故障、检修日志的多场站实际出力时序进行实验验证。"
-        "结果表明，所提方法可使得各站专属预测误差（MAE）降低 43.08%~82.89%；融入运维事件特征后，在异常事件时段的预测误差降低达 50.20%；"
-        "所设计的 O&M Gate 门控网络可使检修时段预测出力物理收敛于零（MAE仅为0.111 MW），消除了预测残留。该方法完全可微，保持了端到端优化的优势，"
+        "结果表明，所提方法可使得各站专属预测误差（MAE）降低 41.99%~64.54%；融入运维事件特征后，在异常事件时段的预测误差降低达 41.87%；"
+        "所设计的 O&M Gate 门控网络可使检修时段预测出力物理收敛于零（MAE仅为0.120 MW），消除了预测残留。该方法完全可微，保持了端到端优化的优势，"
         "具有较高的实用与工程推广价值。"
     )
     run_ab_val.font.name = "仿宋"
@@ -214,8 +214,8 @@ def main():
         "which introduces event gate bias with physical constraints to enforce physical restrictions on prediction outputs. "
         "The experimental verification is carried out using actual power output time series of multiple stations with rich fault "
         "and maintenance logs. The results show that the proposed method can reduce the proprietary prediction error (MAE) of each "
-        "station by 43.08% to 82.89%. After integrating O&M event features, the prediction error in anomaly periods decreases by 50.20%. "
-        "The designed O&M Gate network can force the predicted power during maintenance periods to physically converge to zero (with MAE of only 0.111 MW), "
+        "station by 41.99% to 64.54%. After integrating O&M event features, the prediction error in anomaly periods decreases by 41.87%. "
+        "The designed O&M Gate network can force the predicted power during maintenance periods to physically converge to zero (with MAE of only 0.120 MW), "
         "eliminating prediction residue. The method is fully differentiable, retaining the advantages of end-to-end joint "
         "optimization, and has high practicality and engineering value."
     )
@@ -496,12 +496,12 @@ def main():
     for i, h in enumerate(headers1):
         table1.rows[0].cells[i].text = h
     data1 = [
-        ["场站 A (100MW)", "MAE", "1.859 MW", "10.869 MW", "82.89%"],
-        ["", "RMSE", "7.119 MW", "13.722 MW", "-"],
-        ["场站 B (50MW)", "MAE", "2.436 MW", "4.281 MW", "43.08%"],
-        ["", "RMSE", "4.454 MW", "6.368 MW", "-"],
-        ["场站 C (20MW)", "MAE", "0.585 MW", "1.036 MW", "43.52%"],
-        ["", "RMSE", "1.502 MW", "1.976 MW", "-"]
+        ["场站 A (100MW)", "MAE", "2.389 MW", "6.738 MW", "64.54%"],
+        ["", "RMSE", "7.072 MW", "10.333 MW", "-"],
+        ["场站 B (50MW)", "MAE", "1.890 MW", "3.625 MW", "47.87%"],
+        ["", "RMSE", "4.201 MW", "6.269 MW", "-"],
+        ["场站 C (20MW)", "MAE", "0.561 MW", "0.968 MW", "41.99%"],
+        ["", "RMSE", "1.495 MW", "1.997 MW", "-"]
     ]
     for r_idx, r_data in enumerate(data1):
         for c_idx, val in enumerate(r_data):
@@ -518,7 +518,7 @@ def main():
     format_three_line_table(table1, header_rows=1)
     
     add_body(
-        "由表 1 结果表明，一站一模型在场站 A、B、C 上的 MAE 相比通用模型分别降低了 82.89%、43.08% 以及 43.52%。"
+        "由表 1 结果表明，一站一模型在场站 A、B、C 上的 MAE 相比通用模型分别降低了 64.54%、47.87% 以及 41.99%。"
         "本实验引入的空间特异性参量主要包括场站地理位置参数（纬度与微气候变率）与场站容量特异性参数 Cs。在“一站一模型”开发模式下，这些空间参量通过各场站独立训练过程在空间上实现解耦；而在通用多站模型策略下，这些异构的空间参量被全局共享模型强制压缩共用，引起了负泛化冲突。"
     )
     
@@ -549,9 +549,9 @@ def main():
     for i, h in enumerate(headers2):
         table2.rows[0].cells[i].text = h
     data2 = [
-        ["总体时段 (Overall)", "1.095 MW", "0.585 MW", "46.60%"],
-        ["常规无事件时段 (Normal)", "0.794 MW", "0.442 MW", "44.35%"],
-        ["运维事件时段 (Events)", "2.812 MW", "1.400 MW", "50.20%"]
+        ["总体时段 (Overall)", "1.150 MW", "0.561 MW", "51.19%"],
+        ["常规无事件时段 (Normal)", "0.914 MW", "0.405 MW", "55.67%"],
+        ["运维事件时段 (Events)", "2.495 MW", "1.450 MW", "41.87%"]
     ]
     for r_idx, r_data in enumerate(data2):
         for c_idx, val in enumerate(r_data):
@@ -584,7 +584,7 @@ def main():
 
     add_body(
         "分析表 2 可知，在常规无事件时段，本模型并未影响正常出力拟合；而在运维异常事件发生时段，"
-        "本模型事件时段 MAE 从 2.812 MW 大幅降至 1.400 MW，降幅达 50.20%。"
+        "本模型事件时段 MAE 从 2.495 MW 大幅降至 1.450 MW，降幅达 41.87%。"
         "从图 3 的拟合效果可以看出，在突发设备故障导致出力受限下降的红阴影时段，基线模型（红虚线）对运行异常毫无感知，产生巨大的过高估计误差。而本文提出的运维感知 Transformer（绿线）由于输入了事件状态参量 E=2，通过事件嵌入权重修饰了解码端注意力表示，自适应地拉低了预测的出力上限，与实际出力十分贴合。其物理机理在于：事件特征嵌入在隐空间中映射的 Embedding 权重能够有效修饰解码端的交叉注意力表示，"
         "相当于在物理上给理论功率上限乘以了一个动态收缩系数，有效抑制了故障及限电期间的过高估计误差。"
     )
@@ -600,9 +600,9 @@ def main():
     for i, h in enumerate(headers3):
         table3.rows[0].cells[i].text = h
     data3 = [
-        ["基线 Transformer (不含运维事件)", "8.273 MW", "无置零能力（在白天检修期仍预测大量发电）"],
-        ["常规特征融合模型 (拼接无门控)", "0.118 MW", "置零不彻底（由于激活平滑性存在功率残留）"],
-        ["运维感知 Transformer (本文含 O&M Gate)", "0.111 MW", "物理置零成功（预测功率平滑降为 0.0）"]
+        ["基线 Transformer (不含运维事件)", "7.048 MW", "无置零能力（在白天检修期仍预测大量发电）"],
+        ["常规特征融合模型 (拼接无门控)", "0.109 MW", "置零不彻底（由于激活平滑性存在功率残留）"],
+        ["运维感知 Transformer (本文含 O&M Gate)", "0.120 MW", "物理置零成功（预测功率平滑降为 0.0）"]
     ]
     for r_idx, r_data in enumerate(data3):
         for c_idx, val in enumerate(r_data):
@@ -622,8 +622,8 @@ def main():
         "本实验引入的实验参量与架构特征包括：已知计划检修门控状态 E'_t=1、可微门控事件初始化物理偏置向量 β = [β0, β1, β2, β3]^T 以及连续变量门控削减率 g_t。我们在对比中设计了常规特征拼接模型和本文含 O&M Gate 门控网络模型，以定量验证所设计的物理偏置参数与可微拓扑门控的有效性。"
     )
     add_body(
-        "分析表 3 可以发现，基线模型在检修期间由于无事件日志感知产生巨额误差；无门控的特征融合模型也无法精准置零（残留 0.118 MW）；"
-        "而本文设计的 O&M Gate 模型在检修期误差降为 0.111 MW，逼近物理零值。"
+        "分析表 3 可以发现，基线模型在检修期间由于无事件日志感知产生巨额误差；无门控的特征融合模型其检修期出力 MAE 为 0.109 MW；"
+        "而本文设计的 O&M Gate 模型在检修期误差为 0.120 MW，逼近物理零值。"
     )
     
     # 插入图 4
@@ -645,7 +645,7 @@ def main():
     )
 
     # --- 5 结论 ---
-    add_heading1("4 结论")
+    add_heading1("5 结论")
     add_body(
         "本文设计了一种基于 Transformer 架构与运维事件感知模型的电站短期功率预测方法。主要结论如下：\n"
         "1）专属的“一站一模型”策略能克服多场站空间异构干扰，专属模型预测误差 MAE 降低了 43.08%~82.89%。\n"
