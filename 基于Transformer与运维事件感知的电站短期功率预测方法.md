@@ -5,7 +5,7 @@
 
 ---
 
-> **摘要**：针对新能源发电功率预测在电站运维系统部署中面临的空间异构、异常运维事件、限电与检修停机等问题，提出一种基于 Transformer 架构与运维事件感知的短期功率预测方法。首先，针对不同场站的容量规模和气象条件差异，采用场站专属建模策略，降低多场站混合训练可能引入的负迁移影响。其次，将计划检修、设备故障和电网限电等离散运维状态编码为可学习事件嵌入，并与历史出力、辐照度、温度及未来气象特征进行融合。最后，在预测头中引入 O&M Gate 门控分支，根据未来可获得的计划检修指令施加输出抑制偏置，以减少检修时段预测残留。基于三座场站 1 h 分辨率样例数据的实验表明，场站专属建模、运维事件融合和门控约束均能在相应切片上改善误差表现；其中异常时段 MAE 由 3.325 MW 降至 1.232 MW，计划检修时段 MAE 降至 0.103 MW。本文的贡献主要体现在面向电站运维场景的建模流程整合、事件可获得性约束和实验协议透明化。
+> **摘要**：针对新能源发电功率预测在电站运维系统部署中面临的空间异构、异常运维事件、限电与检修停机等问题，提出一种基于 Transformer 架构与运维事件感知的短期功率预测方法。首先，针对不同场站的容量规模和气象条件差异，采用场站专属建模策略，降低多场站混合训练可能引入的负迁移影响。其次，将计划检修、设备故障和电网限电等离散运维状态编码为可学习事件嵌入，并与历史出力、辐照度、温度及未来气象特征进行融合。最后，在预测头中引入 O&M Gate 门控分支，根据未来可获得的计划检修指令施加输出抑制偏置，以减少检修时段预测残留。基于三座场站 1 h 分辨率样例数据的 GitHub Actions 复现实验表明，场站专属建模相较空间共享模型的 MAE 降幅为 20.83%~64.32%；在场站 C 上融入运维事件后，总体 MAE 由 1.096 MW 降至 0.566 MW，运维事件时段 MAE 由 2.439 MW 降至 1.482 MW；计划检修时段中，O&M Gate 将 MAE 从无事件基线的 7.322 MW 降至 0.106 MW。本文的贡献主要体现在面向电站运维场景的建模流程整合、事件可获得性约束和实验协议透明化。
 >
 > **关键词**：功率预测；时序数据；Transformer；运维事件感知；场站专属独立建模；可微门控
 >
@@ -20,7 +20,7 @@
 
 ---
 
-> **Abstract**: To address spatial heterogeneity, abnormal O&M events, curtailment, maintenance shutdowns and prediction residues in short-term renewable power forecasting, this paper proposes a Transformer-based forecasting method with O&M event awareness. A station-specific modeling strategy is first adopted to reduce the negative transfer caused by mixed training across stations with different capacities and meteorological patterns. Discrete O&M states, including scheduled maintenance, device faults and grid curtailment, are then encoded as learnable event embeddings and fused with historical power, irradiance, temperature and future meteorological features. Finally, an O&M Gate branch is introduced in the prediction head to suppress outputs when scheduled maintenance instructions are available in advance. Experiments on hourly sample data from three stations show that station-specific modeling, O&M event fusion and gate-based output constraints improve forecasting errors on their corresponding evaluation slices. In particular, the MAE during abnormal periods decreases from 3.325 MW to 1.232 MW, and the MAE during maintenance periods decreases to 0.103 MW. The main contribution of this work lies in an O&M-oriented modeling workflow, explicit constraints on future event availability, and a more transparent experimental protocol rather than claiming a fundamentally new Transformer architecture.
+> **Abstract**: To address spatial heterogeneity, abnormal O&M events, curtailment, maintenance shutdowns and prediction residues in short-term renewable power forecasting, this paper proposes a Transformer-based forecasting method with O&M event awareness. A station-specific modeling strategy is first adopted to reduce the negative transfer caused by mixed training across stations with different capacities and meteorological patterns. Discrete O&M states, including scheduled maintenance, device faults and grid curtailment, are then encoded as learnable event embeddings and fused with historical power, irradiance, temperature and future meteorological features. Finally, an O&M Gate branch is introduced in the prediction head to suppress outputs when scheduled maintenance instructions are available in advance. Reproducible experiments on hourly sample data from three stations show that station-specific modeling reduces MAE by 20.83%-64.32% compared with a spatially shared model. On Station C, incorporating O&M events decreases the overall MAE from 1.096 MW to 0.566 MW and the event-period MAE from 2.439 MW to 1.482 MW. During scheduled maintenance periods, the O&M Gate reduces MAE from 7.322 MW for the no-event baseline to 0.106 MW. The main contribution of this work lies in an O&M-oriented modeling workflow, explicit constraints on future event availability, and a more transparent experimental protocol rather than claiming a fundamentally new Transformer architecture.
 >
 > **Key words**: power forecasting; time-series data; Transformer; O&M event awareness; station-specific proprietary modeling; differentiable gate
 
@@ -216,7 +216,15 @@ $$\mathbf{J}_{\mathbf{d}} = (\hat{P}_{final} - P_{true}) \left[ (1 - g) \mathbf{
 
 #### 4.2.1 场站专属独立建模实验（缓解负迁移）
 
-实验一证实了独立专属建模能够避免混合共享模型引发的空间“负迁移”与均值化平庸，在场站 A 和 B 上 MAE 相比通用模型大幅降低 48.16% 和 20.97%。
+实验一对比了为各电站单独训练的场站专属模型与三站数据合并后训练的空间共享模型。表 4 显示，三个场站上专属模型的 MAE 和 RMSE 均低于空间共享模型，其中场站 A 的 MAE 从 5.773 MW 降至 2.060 MW，降幅为 64.32%；场站 B 和场站 C 的 MAE 降幅分别为 20.83% 和 31.54%。这说明当场站容量、气象波动和事件分布差异明显时，直接混合训练可能带来负迁移，场站专属建模可作为工程部署中的稳健基线。
+
+##### 表 4 场站专属模型与空间共享模型对比
+
+| 评估场站 | 专属模型 MAE | 共享模型 MAE | 专属模型 RMSE | 共享模型 RMSE | MAE 降幅 |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| 场站 A | 2.060 MW | 5.773 MW | 6.899 MW | 9.933 MW | 64.32% |
+| 场站 B | 1.935 MW | 2.444 MW | 4.153 MW | 4.984 MW | 20.83% |
+| 场站 C | 0.566 MW | 0.827 MW | 1.495 MW | 1.823 MW | 31.54% |
 
 <div align="center">
   <img src="src/results/experiment1_one_model_vs_global.png" width="80%" alt="图 2 典型晴朗日预测对比图">
@@ -225,15 +233,15 @@ $$\mathbf{J}_{\mathbf{d}} = (\hat{P}_{final} - P_{true}) \left[ (1 - g) \mathbf{
 
 #### 4.2.2 运维异常日志 Embedding 融合效果机理分析
 
-在高度异常的场站 C 进行测试。表 2 数据证明，引入运维嵌入后，在“异常事件发生时段”，本文感知模型 MAE 仅为 1.232 MW，对比基线模型的 3.325 MW，误差降幅达 62.94%。
+实验二在异常事件占比较高的场站 C 上进行，比较不融合运维事件的基线 Transformer 与融合事件嵌入后的 O&M Aware Transformer。表 5 显示，融合运维事件后总体 MAE 从 1.096 MW 降至 0.566 MW，常规无事件时段 MAE 从 0.860 MW 降至 0.405 MW，运维事件时段 MAE 从 2.439 MW 降至 1.482 MW。结果表明，事件状态不仅有助于异常片段预测，也可能通过改善历史状态表征提升正常片段误差表现。
 
-##### 表 4 融入运维特征前后误差对比
+##### 表 5 融入运维事件特征前后误差对比
 
 | 评估时段 | 基线 Transformer MAE | 运维感知 Transformer MAE | 误差降幅 |
 | :--- | :---: | :---: | :---: |
-| 总体时段 (Overall) | 1.078 MW | 0.710 MW | 34.17% |
-| 常规无事件时段 | 0.683 MW | 0.618 MW | 9.53% |
-| 运维事件异常时段 | 3.325 MW | 1.232 MW | 62.94% |
+| 总体时段 (Overall) | 1.096 MW | 0.566 MW | 48.34% |
+| 常规无事件时段 (Normal) | 0.860 MW | 0.405 MW | 52.87% |
+| 运维事件时段 (Events) | 2.439 MW | 1.482 MW | 39.25% |
 
 <div align="center">
   <img src="src/results/experiment2_fault_comparison.png" width="80%" alt="图 3 典型运维异常预测对比图">
@@ -242,16 +250,16 @@ $$\mathbf{J}_{\mathbf{d}} = (\hat{P}_{final} - P_{true}) \left[ (1 - g) \mathbf{
 
 #### 4.2.3 消融实验与门控边界验证
 
-实验验证了门控分支在降低检修预测残留方面的作用。普通的特征融合模型在计划检修样本较少时仍可能保留少量输出；加入事件偏置门控后，计划检修时段 MAE 进一步降至 0.103 MW。该结果说明门控对检修停机片段有效，但其本质仍是可微输出抑制机制，需要与规则后处理基线同时报告。
+实验三进一步分析计划检修时段的预测残留问题。表 6 显示，不含事件的基线 Transformer 在计划检修时段 MAE 为 7.322 MW，存在明显残留；仅进行事件特征融合但关闭门控后，MAE 降至 0.115 MW；加入 O&M Gate 后进一步降至 0.106 MW。由此可见，事件特征本身已经提供了主要的检修状态信息，门控分支的增益较小但稳定。为了避免夸大门控作用，本文将其定位为端到端训练中的可微输出抑制机制，而非替代工程规则后处理的严格约束求解器。
 
-##### 表 5 计划检修时段消融实验与规则后处理对比
+##### 表 6 计划检修时段消融实验
 
 | 模型架构 | 计划检修时段 MAE | 说明 |
 | :--- | :---: | :--- |
-| 基线 Transformer (不含事件) | 9.006 MW | 无法感知检修状态，存在明显预测残留 |
-| 常规融合模型 (特征拼接) | 0.112 MW | 已利用事件特征，但仍存在少量平滑残留 |
+| 基线 Transformer (不含事件) | 7.322 MW | 无法感知检修状态，存在明显预测残留 |
+| 常规融合模型 (事件嵌入，无门控) | 0.115 MW | 已利用事件特征，但仍有少量残留 |
+| O&M Aware (事件嵌入 + 门控) | 0.106 MW | 在端到端训练中进一步抑制输出残留 |
 | 规则后处理基线 (检修时段置为 0) | 0.000 MW | 工程规则上限，不参与端到端训练 |
-| O&M Aware (事件嵌入 + 门控) | 0.103 MW | 端到端训练中的可微输出抑制 |
 
 <div align="center">
   <img src="src/results/experiment3_outage_comparison.png" width="80%" alt="图 4 典型计划检修预测对比图">
@@ -267,16 +275,34 @@ $$\mathbf{J}_{\mathbf{d}} = (\hat{P}_{final} - P_{true}) \left[ (1 - g) \mathbf{
   <p><b>图 5 运维状态 Embedding 的 t-SNE 可视化聚类图</b></p>
 </div>
 
-#### 4.2.5 主流模型对比与统计显著性检验
+#### 4.2.5 门控先验偏置敏感性分析
 
-为了验证本文所提方法的有效性，我们在场站 C 测试集上，与传统时序网络（LSTM, GRU, TCN）以及近年来代表性的 Transformer 模型（Informer, Autoformer, FEDformer, PatchTST）进行了对比。实验结果如图 6 所示。在大部分常规天气条件下，Informer 和 PatchTST 表现出了较强的多变量特征提取能力。然而，在突发故障及检修等异常运维时段，由于上述模型未显式对离散异常状态进行融合感知，预测值在非平稳区间出现了一定程度的偏差，产生了较多误差较大的数据点。相比之下，本文方法通过引入运维特征嵌入与可微门控机制，误差分布相对集中。经配对 t-检验（Paired t-test）与 Wilcoxon 符号秩检验，本文方法降低的误差在统计学上具有显著性（p-value < 0.001），且 95% 置信区间下的误差范围相较于 PatchTST 等模型有一定改善。
+为评估 O&M Gate 中检修事件先验偏置 $\beta_1$ 的影响，在场站 C 上设置 $\beta_1 \in \{0,1,5,10,15\}$ 进行对比。表 7 显示，偏置为 0 时计划检修期 MAE 为 0.1280 MW；当偏置增加到 5、10、15 时，MAE 分别为 0.1067 MW、0.1116 MW 和 0.1072 MW，整体处于高抑制区间。该结果说明门控偏置不需要无限增大，过大的饱和偏置并未带来稳定优势，选择 $\beta_1=10$ 是在抑制残留和保留梯度通路之间的折中设置。
 
-<div align="center">
-  <img src="src/results/error_boxplot.png" width="80%" alt="图 6 各预测模型绝对误差分布对比箱线图">
-  <p><b>图 6 各预测模型绝对误差分布对比箱线图</b></p>
-</div>
+##### 表 7 门控先验偏置敏感性实验
 
-#### 4.2.6 注意力机制可解释性分析 (Attention Interpretability)
+| 门控先验偏置 $\beta_1$ | 计划检修期 MAE | 状态评估 |
+| ---: | :---: | :--- |
+| 0 | 0.1280 MW | 较强抑制，存在微量残留 |
+| 1 | 0.1187 MW | 高抑制区，残留较小 |
+| 5 | 0.1067 MW | 高抑制区，残留较小 |
+| 10 | 0.1116 MW | 高抑制区，残留较小 |
+| 15 | 0.1072 MW | 高抑制区，残留较小 |
+
+#### 4.2.6 不同预测跨度敏感性分析
+
+实验五比较了 $H=12,24,48,72$ h 四种预测跨度下的场站 C 测试集表现。表 8 显示，在本样例数据中，24 h、48 h 和 72 h 的 MAE 均处于 0.578~0.626 MW 区间，12 h 的 MAE 为 0.880 MW。该结果没有呈现单调随预测跨度增大而恶化的趋势，可能与不同窗口下训练样本构成、检修片段覆盖比例和随机初始化有关。因此，本文仅将其作为预测跨度敏感性结果报告，不据此推出模型在长预测跨度上必然更优的结论。
+
+##### 表 8 不同预测跨度敏感性实验
+
+| 超前预测窗口 $H$ | 测试集 MAE | 测试集 RMSE |
+| :---: | :---: | :---: |
+| 12 h | 0.880 MW | 1.989 MW |
+| 24 h | 0.626 MW | 1.469 MW |
+| 48 h | 0.578 MW | 1.410 MW |
+| 72 h | 0.610 MW | 1.394 MW |
+
+#### 4.2.7 注意力机制可解释性分析 (Attention Interpretability)
 
 <div align="center">
   <img src="src/results/attention_heatmap.png" width="80%" alt="图 7 典型突发故障时段注意力机制热力图">
@@ -285,26 +311,17 @@ $$\mathbf{J}_{\mathbf{d}} = (\hat{P}_{final} - P_{true}) \left[ (1 - g) \mathbf{
 
 图 7 用于展示异常片段中注意力权重的局部集中现象，作为模型诊断和可解释性辅助材料。由于注意力权重不等价于因果解释，本文仅将其作为定性分析，不据此单独推出机制性结论。
 
-#### 4.2.7 计算部署实时性
+#### 4.2.8 计算部署实时性
 
 在 GPU 环境下单步超前推理仅耗时 8.4 毫秒，满足电力系统日内调度对实时时序功率预测的要求。
 
-#### 4.2.8 计划检修提前告知时长敏感性分析
+#### 4.2.9 复现性说明
 
-在电网实际调度场景中，检修计划的制定与下发存在不同的提前告知时间（Lead Time），例如日前调度（提前 24 小时）、日内调度（提前 12 小时或 6 小时）及临时紧急维护（提前 1 小时）。为了评估本文模型在不同检修事件提前量下的预测表现，我们开展了敏感性测试。我们将计划检修事件信息的提前加入时间分别设为 24h, 12h, 6h 和 1h，并在场站 C 测试集上评估了模型在计划检修时段内的 MAE 以及测试集整体 MAE，实验结果如表 4 所示。
-
-##### 表 6 计划检修事件提前告知时长敏感性消融实验
-
-| 检修计划提前告知时长 (Lead Time) | 计划检修时段 MAE | 测试集整体 MAE | 门控状态 |
-| :--- | :---: | :---: | :---: |
-| 日前计划 (提前 24h) | 0.103 MW | 0.710 MW | 充分利用检修指令 |
-| 日内计划 (提前 12h) | 0.115 MW | 0.715 MW | 基本稳定 |
-| 紧急调度 (提前 6h) | 0.142 MW | 0.728 MW | 误差略有增加 |
-| 临时通知 (提前 1h) | 0.185 MW | 0.752 MW | 受可获得信息不足影响 |
+本研究的协议统计和主要实验由 GitHub Actions 在 Ubuntu CPU 环境中自动执行，运行流程包括依赖安装、中文字体安装、数据协议统计、模型训练、报告生成和结果 artifact 上传。实验入口为 `src/scripts/run_experiments.py`，数据统计入口为 `src/scripts/summarize_protocol.py`，输出文件包括 `实验结果报告.md`、`实验协议与数据统计补充.md` 以及 `src/results/` 下的图表和 CSV 统计表。该设置使训练/测试切分、事件屏蔽策略和报告生成过程可以在远端环境中重复执行，降低仅依赖本地手工结果带来的复核风险。
 
 ### 4.3 典型时序模型在运维工况下的性能分析
 
-为了客观评估不同模型在运维工况下的表现，我们对各基线模型的性能特点进行了对比分析：
+由于本轮 GitHub Actions 主要复现实验尚未统一训练 LSTM、GRU、TCN、Informer、Autoformer、FEDformer 和 PatchTST 等完整外部基线，本文不将这些模型的数值对比作为主要结论。以下仅从模型结构角度讨论它们在运维工况下可能面临的挑战，后续扩展实验应采用相同时间切分、相同输入特征可获得性和相同训练轮数进行公平比较。
 
 - **LSTM 与 GRU**：这类基于循环结构的神经网络，在长周期时序预测时由于计算图随时间步展开，参数优化面临一定挑战。在面对“突发设备故障降容”这类非平稳断崖式跳变时，其隐藏状态的转移偏向于平滑演化，对突发的瞬间状态切换反应相对迟滞，从而在异常消退后仍表现出一定的预测偏差残留。
 
@@ -316,29 +333,15 @@ $$\mathbf{J}_{\mathbf{d}} = (\hat{P}_{final} - P_{true}) \left[ (1 - g) \mathbf{
 
 - **PatchTST**：其通道独立（Channel Independent）设计对于避免气象变量间的参数相互干扰具有良好效果。但在多模态运维场景下，通道独立切断了气象通道与离散事件嵌入通道之间的非线性耦合交互。由于无法在特征提取的早期实现物理降容事件与辐照度的深度融合，模型在故障和限电发生时容易产生高误差离群点（如图 6 所示）。
 
-### 4.4 多气象条件切片细化分析与鲁棒性验证
+### 4.4 超参数与计算复杂度解析
 
-为探究微气象干扰下的表现，我们将场站 B 测试集依据天空透射率和云量变率切分为三种极端天气条件：
+除表 7 的门控偏置和表 8 的预测跨度敏感性外，网络结构参数仍需在更完整的实验中进一步网格搜索。当前模型采用 $D=64$、4 个注意力头和 2 层编码器/解码器，主要依据训练稳定性和计算成本折中确定。
 
-- **晴朗天气 (Sunny)**：辐照度呈现高斯钟形曲线。基线 Transformer MAE 为 0.352 MW，本文模型为 0.345 MW，表明附加的 O&M 结构未引发过拟合降级。
-
-- **多云/雾霾天气 (Cloudy/Haze)**：高频云团遮蔽导致曲线呈现高烈度“锯齿状”震荡，气象变量处于非平稳状态。PatchTST MAE 为 1.542 MW，而本文模型 MAE 为 0.985 MW，误差缩减达 36.1%。
-
-- **雨雪天气 (Rain/Snow)**：持续厚云覆盖使得发电功率处于随机波动状态，且低温极易触发逆变器保护逻辑。本文模型通过融合离散报警日志与气象特征，RMSE 从 2.315 MW 下降至 1.488 MW，表明多模态设计在恶劣气象条件下的适应性。
-
-### 4.5 超参数敏感性与计算复杂度解析
-
-为探究网络结构的规模边界，本文针对隐藏层维度 $D$ 与注意力头数 $H$ 开展了网格级敏感性消融。
-
-- **隐藏层维度 $D$**：当 $D=16$ 时，网络容量不足以表征复杂的离散事件状态，MAE 为 0.825 MW；提升至 64 时误差迅速下降至最优的 0.710 MW，达到参数与表征的平衡；若继续增加至 $D=128$，在样本量较小的场站 C 上可能引发轻微过拟合，MAE 反弹至 0.743 MW。
-
-- **注意力头数 $H$**：$H=2$ 时投影通道较少；$H=4$ 时达到较好平衡；过度切分至 $H=16$ 时，每头特征维度过度压缩（仅 4 维），使得注意力机制性能受到一定影响。
-
-- **计算复杂度评估 (FLOPs)**：在理论计算量方面，经典 Transformer 自注意力为 $\mathcal{O}(L^2 \cdot D)$。本文模型保留了全局视场，单次前向传播浮点运算（FLOPs）约为 0.45 GFLOPs，参量 1.8M 级别。相比之下，PatchTST 虽降低了时间步复杂度至 $\mathcal{O}((L/P)^2)$，但其通道独立计算带来的冗余导致总 FLOPs 为 0.62 GFLOPs。实测表明在单张 RTX 3090 GPU 上，本文单次推理延迟在 8.4 毫秒内，能满足电力调度实时性的要求。
+- **计算复杂度评估 (FLOPs)**：在理论计算量方面，经典 Transformer 自注意力为 $\mathcal{O}(L^2 \cdot D)$。本文模型保留了全局视场，单次前向传播浮点运算（FLOPs）约为 0.45 GFLOPs，参量 1.8M 级别。实测表明在单张 RTX 3090 GPU 上，本文单次推理延迟在 8.4 毫秒内，能满足电力调度实时性的要求。
 
 ## 5 结论与展望
 
-本文针对新能源短期功率预测在设备故障、电网限电及计划检修等运维事件下容易出现误差放大的问题，提出了基于事件嵌入融合和 O&M Gate 门控抑制的 Transformer 预测流程。实验表明，场站专属建模有利于缓解空间异构造成的负迁移，融入运维事件特征可降低异常时段误差，门控分支可减轻计划检修期预测残留。本文同时补充了时间切分、事件分布、事件持续时间、未来事件可获得性和规则后处理基线，以增强实验透明度。受限于当前公开样例数据规模和私有生产数据不可直接公开，后续研究将进一步在更长周期、多区域真实 SCADA 与工单数据上验证，并探索非结构化运维文本日志的融合方法。
+本文针对新能源短期功率预测在设备故障、电网限电及计划检修等运维事件下容易出现误差放大的问题，提出了基于事件嵌入融合和 O&M Gate 门控抑制的 Transformer 预测流程。GitHub Actions 复现实验表明，场站专属建模相较空间共享模型可降低 20.83%~64.32% 的 MAE；在场站 C 上引入运维事件后，总体 MAE 由 1.096 MW 降至 0.566 MW，运维事件时段 MAE 由 2.439 MW 降至 1.482 MW；在计划检修时段，门控模型 MAE 为 0.106 MW，较不含事件的基线显著降低，并较无门控融合模型略有改善。本文同时补充了时间切分、事件分布、事件持续时间、未来事件可获得性和远端复现实验流程，以增强实验透明度。受限于当前公开样例数据规模和外部基线尚未完全统一复现，后续研究将进一步在更长周期、多区域真实 SCADA 与工单数据上验证，并补充 LSTM、Informer、PatchTST 等模型在同一协议下的公平对比。
 
 ## 参考文献 (References)
 
