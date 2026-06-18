@@ -30,11 +30,22 @@ jobs:
         pip install torch --index-url https://download.pytorch.org/whl/cpu
         pip install -r requirements.txt
 
+    - name: Install system fonts (for Chinese rendering in plots)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y fonts-wqy-zenhei
+
+    - name: Summarize dataset protocol
+      env:
+        PYTHONPATH: .
+      run: |
+        python -u src/scripts/summarize_protocol.py
+
     - name: Run experiments
       env:
         PYTHONPATH: .
       run: |
-        python src/scripts/run_experiments.py
+        python -u src/scripts/run_experiments.py
 
     - name: Upload Experiment Report and Plots as Artifacts
       uses: actions/upload-artifact@v4
@@ -42,10 +53,11 @@ jobs:
         name: experiment-results
         path: |
           实验结果报告.md
+          实验协议与数据统计补充.md
           src/results/
 
     - name: Commit and push generated report and plots
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
         commit_message: "Auto-update experiment results and report [skip ci]"
-        file_pattern: '实验结果报告.md src/results/*'
+        file_pattern: '实验结果报告.md 实验协议与数据统计补充.md src/results/*'
