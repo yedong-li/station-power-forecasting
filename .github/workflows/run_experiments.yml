@@ -47,6 +47,12 @@ jobs:
       run: |
         python -u src/scripts/run_experiments.py
 
+    - name: Run classic baseline comparison
+      env:
+        PYTHONPATH: .
+      run: |
+        python -u src/scripts/run_baseline_comparison.py
+
     - name: Upload Experiment Report and Plots as Artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -54,10 +60,11 @@ jobs:
         path: |
           实验结果报告.md
           实验协议与数据统计补充.md
+          经典算法对比实验.md
           src/results/
 
     - name: Commit and push generated report and plots
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
         commit_message: "Auto-update experiment results and report [skip ci]"
-        file_pattern: '实验结果报告.md 实验协议与数据统计补充.md src/results/*'
+        file_pattern: '实验结果报告.md 实验协议与数据统计补充.md 经典算法对比实验.md src/results/*'
